@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SlideGenius</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">SlideGenius</div>
+    <nav class="nav">
+      <button class="link" data-page="home" id="navHome">الرئيسية</button>
+      <button class="link" data-page="gallery" id="navGallery">القوالب</button>
+      <button class="link" data-page="editor" id="navEditor">المحرر</button>
+      <button class="link" data-page="pricing" id="navPricing">الأسعار</button>
+      <button class="link" data-page="admin" id="navAdmin" title="Admin">Admin</button>
+      <button class="pill" id="btnLang">EN</button>
+    </nav>
+  </header>
+
+  <main class="container">
+    <!-- HOME -->
+    <section id="page-home" class="page">
+      <h1 data-i18n="home_title">صمّم عروضك خلال دقائق</h1>
+      <p class="muted" data-i18n="home_sub">اختر قالب، اكتب المحتوى، وادفع — والباقي علينا.</p>
+      <div class="row">
+        <button class="primary" data-page="gallery" data-i18n="start_now">ابدأ الآن</button>
+        <button class="secondary" data-page="pricing" data-i18n="see_prices">شوف الأسعار</button>
+      </div>
+
+      <div class="card mt">
+        <h3 data-i18n="home_steps_title">كيف يشتغل؟</h3>
+        <ol class="steps">
+          <li data-i18n="step1">اختار قالب</li>
+          <li data-i18n="step2">أدخل العنوان والنص وارفع صورة</li>
+          <li data-i18n="step3">عاين ثم ادفع</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- GALLERY -->
+    <section id="page-gallery" class="page hidden">
+      <h2 data-i18n="gallery_title">القوالب</h2>
+      <p class="muted" data-i18n="gallery_sub">اختار قالب وبعدين افتح المحرر.</p>
+      <div id="templatesGrid" class="grid"></div>
+      <div class="row mt">
+        <button class="secondary" data-page="editor" data-i18n="go_editor">روح للمحرر</button>
+      </div>
+    </section>
+
+    <!-- EDITOR -->
+    <section id="page-editor" class="page hidden">
+      <h2 data-i18n="editor_title">المحرر</h2>
+
+      <div class="two">
+        <div class="card">
+          <label data-i18n="pick_template">اختر قالب</label>
+          <select id="selectTemplate"></select>
+
+          <label class="mt" data-i18n="title_label">العنوان</label>
+          <input id="inpTitle" placeholder="عنوان..." />
+
+          <label class="mt" data-i18n="body_label">النص</label>
+          <textarea id="inpBody" rows="6" placeholder="اكتب نصك هنا..."></textarea>
+
+          <label class="mt" data-i18n="color_label">لون العنوان</label>
+          <input id="inpColor" type="color" value="#13b6ec" />
+
+          <label class="mt" data-i18n="font_label">الخط</label>
+          <select id="selectFont">
+            <option value="system-ui">System</option>
+            <option value="'Noto Naskh Arabic', system-ui">Noto Naskh</option>
+            <option value="'Noto Kufi Arabic', system-ui">Noto Kufi</option>
+          </select>
+
+          <label class="mt" data-i18n="image_label">رابط صورة (اختياري)</label>
+          <input id="inpImg" placeholder="https://..." />
+
+          <div class="row mt">
+            <button id="btnPreview" class="primary" data-i18n="preview">معاينة</button>
+            <button id="btnCheckout" class="secondary" data-page="checkout" data-i18n="go_pay">الذهاب للدفع</button>
+          </div>
+          <p class="tiny muted mt" data-i18n="note_demo">ملاحظة: هذه نسخة MVP. لاحقًا نضيف auto-fit + تقسيم تلقائي للسلايدات.</p>
+        </div>
+
+        <div class="card preview">
+          <div class="slide" id="slidePreview">
+            <div class="slide-inner">
+              <h1 id="prevTitle">عنوان</h1>
+              <p id="prevBody">النص يظهر هنا...</p>
+              <img id="prevImg" class="hidden" alt="preview" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRICING -->
+    <section id="page-pricing" class="page hidden">
+      <h2 data-i18n="pricing_title">الأسعار</h2>
+      <div class="card">
+        <p class="muted" data-i18n="pricing_sub">اختر قالب من القوالب، السعر يطلع في صفحة الدفع.</p>
+        <button class="primary" data-page="gallery" data-i18n="browse_templates">استعرض القوالب</button>
+      </div>
+    </section>
+
+    <!-- CHECKOUT -->
+    <section id="page-checkout" class="page hidden">
+      <h2 data-i18n="checkout_title">الدفع</h2>
+      <div class="card">
+        <div class="row space">
+          <div>
+            <div class="muted" data-i18n="selected_template">القالب المختار</div>
+            <div id="checkoutTemplateName" class="big">—</div>
+            <div class="muted mt8" data-i18n="price">السعر</div>
+            <div id="checkoutPrice" class="big">$0</div>
+          </div>
+          <button class="secondary" data-page="editor" data-i18n="back_editor">رجوع للمحرر</button>
+        </div>
+
+        <div class="mt" id="paypalArea">
+          <p class="muted" data-i18n="paypal_hint">إذا ما ظهر زر PayPal: تأكد أنك فتحت الرابط مباشرة (مو داخل معاينة) وأن PAYPAL_CLIENT_ID موجود في Render.</p>
+          <div id="paypal-button-container"></div>
+          <div id="paypalStatus" class="tiny muted mt"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ADMIN -->
+    <section id="page-admin" class="page hidden">
+      <h2 data-i18n="admin_title">لوحة الأدمن</h2>
+
+      <div id="adminAuthCard" class="card">
+        <p class="muted" data-i18n="admin_hint">الدخول محمي. أدخل كلمة مرور الأدمن.</p>
+        <input id="adminPassword" type="password" placeholder="Admin password" />
+        <div class="row mt">
+          <button id="btnAdminLogin" class="primary" data-i18n="login">دخول</button>
+          <button id="btnAdminLogout" class="secondary hidden" data-i18n="logout">خروج</button>
+        </div>
+        <div id="adminMsg" class="tiny mt"></div>
+      </div>
+
+      <div id="adminPanel" class="card hidden">
+        <h3 data-i18n="manage_templates">إدارة القوالب</h3>
+        <div class="two">
+          <div>
+            <label data-i18n="tpl_name">اسم القالب</label>
+            <input id="tplName" placeholder="مثال: Modern Arabic" />
+
+            <label class="mt" data-i18n="tpl_price">السعر</label>
+            <input id="tplPrice" type="number" min="0" step="1" value="5" />
+
+            <label class="mt" data-i18n="tpl_slides">أقصى عدد سلايدات</label>
+            <input id="tplSlides" type="number" min="1" step="1" value="12" />
+
+            <label class="mt" data-i18n="tpl_thumb">رابط صورة مصغرة (اختياري)</label>
+            <input id="tplThumb" placeholder="assets/template3.png أو https://..." />
+
+            <button id="btnAddTpl" class="primary mt" data-i18n="add_template">إضافة قالب</button>
+            <div id="tplMsg" class="tiny mt"></div>
+          </div>
+          <div>
+            <div class="muted" data-i18n="current_templates">القوالب الحالية</div>
+            <div id="adminTemplatesList" class="list mt8"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer mt">
+      <div>© SlideGenius</div>
+      <div class="muted tiny">/health • /admin</div>
+    </footer>
+  </main>
+</body>
+</html>
