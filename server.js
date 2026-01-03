@@ -51,6 +51,32 @@ app.get("/admin", requireAdmin, (req, res) => {
 });
 
 app.use(
+  app.set("trust proxy", 1);
+
+function requireAdmin(req, res, next) {
+  if (req.session?.isAdmin) return next();
+  return res.redirect("/admin-login.html");
+}
+
+app.post("/api/admin/login", (req, res) => {
+  const password = String(req.body?.password || "");
+  const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
+
+  if (ADMIN_PASSWORD && password === ADMIN_PASSWORD) {
+    req.session.isAdmin = true;
+    return res.json({ ok: true });
+  }
+  return res.status(401).json({ ok: false, message: "❌ كلمة المرور خطأ" });
+});
+
+app.post("/api/admin/logout", (req, res) => {
+  req.session.destroy(() => res.json({ ok: true }));
+});
+
+app.get("/admin", requireAdmin, (req, res) => {
+  res.sendFile(path.join(process.cwd(), "admin.html"));
+});
+
   session({
     name: "sgsid",
     secret: SESSION_SECRET,
