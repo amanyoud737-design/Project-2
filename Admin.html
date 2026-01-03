@@ -1,39 +1,39 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>لوحة الأدمن</title>
-  <link rel="stylesheet" href="/styles.css" />
-  <style>
-    .wrap{max-width:980px;margin:40px auto;padding:16px}
-    .card{background:rgba(16,26,34,.95);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:14px}
-    .top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-    button{padding:10px 14px;border-radius:12px;border:none;background:#1e90ff;color:#fff;cursor:pointer}
-    .muted{color:#9fb0bf}
-  </style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Admin</title>
+  <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <div class="wrap">
+  <header class="topbar">
+    <div class="brand">Admin</div>
+    <nav class="nav">
+      <a class="link" href="/">الرجوع للموقع</a>
+      <button class="btn" id="logout">تسجيل خروج</button>
+    </nav>
+  </header>
+
+  <main class="container">
     <div class="card">
-      <div class="top">
-        <h2 style="margin:0">🎛️ لوحة التحكم</h2>
-        <button onclick="logout()">تسجيل خروج</button>
-      </div>
-
-      <p class="muted" style="margin:0">أنت داخل كأدمن ✅</p>
-
-      <hr style="border:0;border-top:1px solid rgba(255,255,255,.08);margin:8px 0">
-
-      <div class="muted">هنا بنضيف إدارة القوالب والأسعار لاحقًا.</div>
+      <h2 style="margin:0 0 10px">لوحة الأدمن ✅</h2>
+      <p class="sub">إذا وصلتي هنا: تسجيل الدخول شغال.</p>
+      <div class="hint" id="info"></div>
     </div>
-  </div>
+  </main>
 
 <script>
-async function logout(){
-  await fetch("/api/admin/logout", { method:"POST" }).catch(()=>{});
-  window.location.href = "/";
+async function load(){
+  const r = await fetch("/api/me");
+  const j = await r.json();
+  document.getElementById("info").textContent = "isAdmin: " + j.isAdmin;
 }
+document.getElementById("logout").addEventListener("click", async ()=>{
+  await fetch("/api/admin/logout", { method:"POST" });
+  window.location.href = "/";
+});
+load();
 </script>
 </body>
 </html>
