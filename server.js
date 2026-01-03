@@ -24,6 +24,31 @@ const frontendDir = process.cwd();
 // Basic middleware
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
+// ===== Admin Guard =====
+function requireAdmin(req, res, next) {
+  if (req.session?.isAdmin) return next();
+  return res.redirect("/admin-login.html");
+}
+
+// Login API
+app.post("/api/admin/login", (req, res) => {
+  const password = String(req.body?.password || "");
+  if (password && password === (process.env.ADMIN_PASSWORD || "")) {
+    req.session.isAdmin = true;
+    return res.json({ ok: true });
+  }
+  return res.status(401).json({ ok: false, message: "❌ كلمة المرور خطأ" });
+});
+
+// Logout API
+app.post("/api/admin/logout", (req, res) => {
+  req.session.destroy(() => res.json({ ok: true }));
+});
+
+// Admin page (protected)
+app.get("/admin", requireAdmin, (req, res) => {
+  res.sendFile(path.join(__dirname, "admin.html"));
+});
 
 app.use(
   session({
