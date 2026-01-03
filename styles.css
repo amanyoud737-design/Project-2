@@ -9,6 +9,8 @@
 
 *{ box-sizing: border-box; }
 body{
+  .container {
+  padding: 24px;
   margin:0;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   background: var(--bg);
