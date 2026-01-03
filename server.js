@@ -1,6 +1,9 @@
 import express from "express";
 import session from "express-session";
 import dotenv from "dotenv";
+import helmet from "helmet";
+import compression from "compression";
+import rateLimit from "express-rate-limit";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -10,73 +13,37 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ===== ENV =====
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
-const SESSION_SECRET = process.env.SESSION_SECRET || "change-this-session-secret";
-const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || "";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "CHANGE_ME";
+const SESSION_SECRET = process.env.SESSION_SECRET || "CHANGE_SESSION_SECRET";
+const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || ""; // Sandbox/Live Client ID
 const CURRENCY = process.env.CURRENCY || "USD";
 
+// ===== paths =====
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const frontendDir = process.cwd();
+const publicDir = __dirname;
 
+// Render/Proxy
+app.set("trust proxy", 1);
 
+// Security
+app.use(helmet({ contentSecurityPolicy: false }));
+app.use(compression());
 
-// Basic middleware
+// Rate limit
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 300
+  })
+);
+
+// Body
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
-// ===== Admin Guard =====
-function requireAdmin(req, res, next) {
-  if (req.session?.isAdmin) return next();
-  return res.redirect("/admin-login.html");
-}
 
-// Login API
-app.post("/api/admin/login", (req, res) => {
-  const password = String(req.body?.password || "");
-  if (password && password === (process.env.ADMIN_PASSWORD || "")) {
-    req.session.isAdmin = true;
-    return res.json({ ok: true });
-  }
-  return res.status(401).json({ ok: false, message: "❌ كلمة المرور خطأ" });
-});
-
-// Logout API
-app.post("/api/admin/logout", (req, res) => {
-  req.session.destroy(() => res.json({ ok: true }));
-});
-
-// Admin page (protected)
-app.get("/admin", requireAdmin, (req, res) => {
-  res.sendFile(path.join(__dirname, "admin.html"));
-});
-
+// Sessions (MUST be before routes)
 app.use(
-  app.set("trust proxy", 1);
-
-function requireAdmin(req, res, next) {
-  if (req.session?.isAdmin) return next();
-  return res.redirect("/admin-login.html");
-}
-
-app.post("/api/admin/login", (req, res) => {
-  const password = String(req.body?.password || "");
-  const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
-
-  if (ADMIN_PASSWORD && password === ADMIN_PASSWORD) {
-    req.session.isAdmin = true;
-    return res.json({ ok: true });
-  }
-  return res.status(401).json({ ok: false, message: "❌ كلمة المرور خطأ" });
-});
-
-app.post("/api/admin/logout", (req, res) => {
-  req.session.destroy(() => res.json({ ok: true }));
-});
-
-app.get("/admin", requireAdmin, (req, res) => {
-  res.sendFile(path.join(process.cwd(), "admin.html"));
-});
-
   session({
     name: "sgsid",
     secret: SESSION_SECRET,
@@ -85,34 +52,39 @@ app.get("/admin", requireAdmin, (req, res) => {
     cookie: {
       httpOnly: true,
       sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 1000 * 60 * 60 * 12,
-    },
+      secure: process.env.NODE_ENV === "production"
+    }
   })
 );
 
-// Health check for Render
-app.get("/health", (req, res) => res.json({ ok: true }));
-
-// Public config for frontend (safe to expose)
-app.get("/config.json", (req, res) => {
-  res.json({
-    PAYPAL_CLIENT_ID,
-    CURRENCY,
-  });
+// Public config for frontend
+app.get("/config.js", (req, res) => {
+  res.type("application/javascript");
+  res.send(
+    `window.__SG_CONFIG__=${JSON.stringify({
+      PAYPAL_CLIENT_ID,
+      CURRENCY
+    })};`
+  );
 });
 
-// Admin auth APIs
+// Health
+app.get("/health", (req, res) => res.json({ ok: true }));
+
+// Auth helper
+function requireAdmin(req, res, next) {
+  if (req.session?.isAdmin) return next();
+  return res.redirect("/admin-login.html");
+}
+
+// Admin APIs
 app.post("/api/admin/login", (req, res) => {
   const password = String(req.body.password || "");
-  if (!ADMIN_PASSWORD) {
-    return res.status(500).json({ ok: false, error: "ADMIN_PASSWORD not set" });
-  }
-  if (password === ADMIN_PASSWORD) {
+  if (password && password === ADMIN_PASSWORD) {
     req.session.isAdmin = true;
     return res.json({ ok: true });
   }
-  return res.status(401).json({ ok: false, error: "Wrong password" });
+  return res.status(401).json({ ok: false, message: "Wrong password" });
 });
 
 app.post("/api/admin/logout", (req, res) => {
@@ -120,64 +92,23 @@ app.post("/api/admin/logout", (req, res) => {
 });
 
 app.get("/api/me", (req, res) => {
-  res.json({ isAdmin: !!req.session.isAdmin });
+  res.json({ isAdmin: !!req.session?.isAdmin });
 });
 
-// Simple templates API (in-memory demo). Replace with DB later.
-let templates = [
-  {
-    id: "t1",
-    name: "Modern Blue",
-    price: 5,
-    maxSlides: 12,
-    thumbnail: "assets/template1.png",
-    createdAt: Date.now(),
-  },
-  {
-    id: "t2",
-    name: "Dark Pitch",
-    price: 8,
-    maxSlides: 15,
-    thumbnail: "assets/template2.png",
-    createdAt: Date.now(),
-  },
-];
-
-app.get("/api/templates", (req, res) => {
-  res.json({ templates });
+// Admin page (protected)
+app.get("/admin", requireAdmin, (req, res) => {
+  res.sendFile(path.join(publicDir, "admin.html"));
 });
 
-app.post("/api/templates", (req, res) => {
-  if (!req.session.isAdmin) return res.status(401).json({ ok: false, error: "Unauthorized" });
-  const { name, price, maxSlides, thumbnail } = req.body || {};
-  if (!name) return res.status(400).json({ ok: false, error: "name required" });
-  const t = {
-    id: "t" + Math.random().toString(16).slice(2),
-    name: String(name),
-    price: Number(price || 0),
-    maxSlides: Number(maxSlides || 10),
-    thumbnail: String(thumbnail || ""),
-    createdAt: Date.now(),
-  };
-  templates.unshift(t);
-  res.json({ ok: true, template: t });
-});
-
-app.delete("/api/templates/:id", (req, res) => {
-  if (!req.session.isAdmin) return res.status(401).json({ ok: false, error: "Unauthorized" });
-  const id = req.params.id;
-  templates = templates.filter((t) => t.id !== id);
-  res.json({ ok: true });
-});
-
-// Serve static frontend
-app.use(express.static(frontendDir));
+// Static
+app.use(express.static(publicDir));
 
 // SPA fallback
 app.get("*", (req, res) => {
-  res.sendFile(path.join(frontendDir, "index.html"));
+  res.sendFile(path.join(publicDir, "index.html"));
 });
 
 app.listen(PORT, () => {
-  console.log(`✅ SlideGenius Clean running on port ${PORT}`);
+  console.log(`✅ Running on port ${PORT}`);
 });
+
