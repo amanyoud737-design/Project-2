@@ -5,6 +5,9 @@ const state = {
   selectedTemplateId: null,
   config: { PAYPAL_CLIENT_ID: "", CURRENCY: "USD" },
 };
+if (window.__OPEN_ADMIN__ === true) {
+  showPage("admin");
+}
 
 const i18n = {
   ar: {
