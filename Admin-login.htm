@@ -1,31 +1,28 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>دخول الأدمن</title>
-  <link rel="stylesheet" href="/styles.css" />
-  <style>
-    .wrap{max-width:520px;margin:70px auto;padding:16px}
-    .card{background:rgba(16,26,34,.95);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:14px}
-    .row{display:flex;gap:10px;flex-wrap:wrap}
-    input{flex:1;min-width:220px;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#0b1116;color:#fff}
-    button{padding:12px 16px;border-radius:12px;border:none;background:#1e90ff;color:#fff;cursor:pointer}
-    .msg{min-height:22px;color:#9fb0bf;font-size:13px}
-  </style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Admin Login</title>
+  <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <h2 style="margin:0">لوحة الأدمن</h2>
-      <p style="margin:0;color:#9fb0bf">الدخول محمي. اكتب كلمة المرور.</p>
-      <div class="row">
-        <input id="pw" type="password" placeholder="كلمة المرور" autocomplete="current-password" />
-        <button id="btn" onclick="login()">دخول</button>
+  <main class="container">
+    <div class="card" style="max-width:640px;margin:40px auto;">
+      <h2 style="margin:0 0 10px">لوحة الأدمن</h2>
+      <p class="sub" style="margin:0 0 14px">الدخول محمي. اكتب كلمة المرور.</p>
+
+      <div class="row2" style="grid-template-columns:1fr 140px;align-items:end;">
+        <div>
+          <label>كلمة المرور</label>
+          <input id="pw" type="password" placeholder="كلمة المرور" autocomplete="current-password" />
+        </div>
+        <button class="btn" id="btn">دخول</button>
       </div>
-      <div class="msg" id="msg"></div>
+
+      <div class="hint" id="msg"></div>
     </div>
-  </div>
+  </main>
 
 <script>
 async function login(){
@@ -36,25 +33,29 @@ async function login(){
   btn.disabled = true;
 
   try{
-    const res = await fetch("/api/admin/login", {
+    const res = await fetch("/api/admin/login",{
       method:"POST",
-      headers:{ "Content-Type":"application/json" },
+      headers:{"Content-Type":"application/json"},
       body: JSON.stringify({ password })
     });
 
-    const data = await res.json().catch(()=> ({}));
-
-    if(res.ok && data.ok){
+    if(res.ok){
+      msg.textContent = "✅ تم الدخول... تحويل";
       window.location.href = "/admin";
-      return;
+    } else {
+      msg.textContent = "❌ كلمة المرور غير صحيحة";
     }
-    msg.textContent = data.message || "كلمة المرور خطأ";
   }catch(e){
-    msg.textContent = "مشكلة اتصال. جرّبي مرة ثانية.";
-  }finally{
+    msg.textContent = "❌ خطأ اتصال";
+  } finally {
     btn.disabled = false;
   }
 }
+
+document.getElementById("btn").addEventListener("click", login);
+document.getElementById("pw").addEventListener("keydown", (e)=>{
+  if(e.key === "Enter") login();
+});
 </script>
 </body>
 </html>
