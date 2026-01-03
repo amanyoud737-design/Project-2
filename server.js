@@ -17,7 +17,8 @@ const CURRENCY = process.env.CURRENCY || "USD";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const frontendDir = path.join(__dirname, "frontend");
+const frontendDir = __dirname;
+
 
 // Basic middleware
 app.use(express.json({ limit: "2mb" }));
